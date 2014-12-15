@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lunny/tango"
 	"github.com/go-xweb/uuid"
+	"github.com/lunny/tango"
 )
 
 const (
@@ -23,13 +23,13 @@ type XsrfOptionInterface interface {
 }
 
 type Xsrf struct {
-	render *tango.Render
+	render  *tango.Render
 	timeout time.Duration
 }
 
 func NewXsrf(timeout time.Duration) *Xsrf {
 	return &Xsrf{
-		timeout:timeout,
+		timeout: timeout,
 	}
 }
 
@@ -66,8 +66,6 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 	}
 
 	if ctx.Req().Method == "GET" {
-		xsrf.render.FuncMaps["XsrfName"] = XSRF_TAG
-
 		var val string = ""
 		cookie, err := ctx.Req().Cookie(XSRF_TAG)
 		if err != nil {
@@ -83,7 +81,7 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 		}
 		xsrf.render.FuncMaps["XsrfFormHtml"] = func() template.HTML {
 			return template.HTML(fmt.Sprintf(`<input type="hidden" name="%v" value="%v" />`,
-			XSRF_TAG, val))
+				XSRF_TAG, val))
 		}
 	} else if ctx.Req().Method == "POST" {
 		res, err := ctx.Req().Cookie(XSRF_TAG)
