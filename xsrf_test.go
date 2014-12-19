@@ -13,9 +13,10 @@ import (
 )
 
 type XsrfAction struct {
+	Checker
 }
 
-func (xsrf *XsrfAction) Do() {
+func (xsrf *XsrfAction) Post() {
 }
 
 func TestXsrf(t *testing.T) {
@@ -41,13 +42,10 @@ func TestXsrf(t *testing.T) {
 }
 
 type NoCheckXsrfAction struct {
+	NoCheck
 }
 
-func (NoCheckXsrfAction) CheckXsrf() bool {
-	return false
-}
-
-func (NoCheckXsrfAction) Do() string {
+func (NoCheckXsrfAction) Post() string {
 	return "this action will not check xsrf"
 }
 

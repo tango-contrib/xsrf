@@ -18,12 +18,40 @@ func XsrfName() string {
 	return XSRF_TAG
 }
 
-type XsrfOptionInterface interface {
+type Xsrfer interface {
 	CheckXsrf() bool
 }
 
+type NoCheck struct {
+}
+
+func (NoCheck) CheckXsrf() bool {
+	return false
+}
+
+type XsrfChecker interface {
+	SetXsrfValue(string)
+	SetXsrfFormHtml(template.HTML)
+}
+
+type Checker struct {
+	XsrfValue string
+	XsrfFormHtml template.HTML
+}
+
+func (Checker) CheckXsrf() bool {
+	return true
+}
+
+func (c *Checker) SetXsrfValue(v string) {
+	c.XsrfValue = v
+}
+
+func (c *Checker) SetXsrfFormHtml(t template.HTML) {
+	c.XsrfFormHtml = t
+}
+
 type Xsrf struct {
-	render  *tango.Render
 	timeout time.Duration
 }
 
@@ -31,11 +59,6 @@ func NewXsrf(timeout time.Duration) *Xsrf {
 	return &Xsrf{
 		timeout: timeout,
 	}
-}
-
-func (xsrf *Xsrf) SetRender(render *tango.Render) {
-	xsrf.render = render
-	render.FuncMaps["XsrfName"] = XsrfName
 }
 
 // NewCookie is a helper method that returns a new http.Cookie object.
@@ -60,7 +83,7 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 	}
 
 	// if action implements check xsrf option and ask not check then return
-	if checker, ok := action.(XsrfOptionInterface); ok && !checker.CheckXsrf() {
+	if checker, ok := action.(Xsrfer); ok && !checker.CheckXsrf() {
 		ctx.Next()
 		return
 	}
@@ -76,12 +99,10 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 			val = cookie.Value
 		}
 
-		xsrf.render.FuncMaps["XsrfValue"] = func() string {
-			return val
-		}
-		xsrf.render.FuncMaps["XsrfFormHtml"] = func() template.HTML {
-			return template.HTML(fmt.Sprintf(`<input type="hidden" name="%v" value="%v" />`,
-				XSRF_TAG, val))
+		if c, ok := action.(XsrfChecker); ok {
+			c.SetXsrfValue(val)
+			c.SetXsrfFormHtml(template.HTML(fmt.Sprintf(`<input type="hidden" name="%v" value="%v" />`,
+				XSRF_TAG, val)))
 		}
 	} else if ctx.Req().Method == "POST" {
 		res, err := ctx.Req().Cookie(XSRF_TAG)
