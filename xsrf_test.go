@@ -1,13 +1,12 @@
 package xsrf
 
 import (
-	"fmt"
-	"io/ioutil"
+	"reflect"
+	"net/http/httptest"
 	"net/http"
 	"testing"
 	"time"
 	"bytes"
-	"compress/gzip"
 
 	"github.com/lunny/tango"
 )
@@ -20,25 +19,22 @@ func (xsrf *XsrfAction) Post() {
 }
 
 func TestXsrf(t *testing.T) {
-	go func() {
-		tg := tango.Classic()
-		tg.Use(NewXsrf(time.Minute * 20))
-		tg.Post("/", new(XsrfAction))
-		tg.Run("0.0.0.0:9996")
-	}()
+	buff := bytes.NewBufferString("")
+	recorder := httptest.NewRecorder()
+	recorder.Body = buff
 
-	resp, bs, err := post("http://localhost:9996/?id=1&name=lllll")
+	tg := tango.Classic()
+	tg.Use(New(time.Minute * 20))
+	tg.Post("/", new(XsrfAction))
+
+	req, err := http.NewRequest("POST", "http://localhost:8000/?id=1&name=lllll", nil)
 	if err != nil {
 		t.Error(err)
-		return
 	}
 
-	fmt.Println(bs)
-
-	if resp.StatusCode == http.StatusOK {
-		t.Error("should say xsrf error.")
-		return
-	}
+	tg.ServeHTTP(recorder, req)
+	refute(t, recorder.Code, http.StatusOK)
+	refute(t, len(buff.String()), 0)
 }
 
 type NoCheckXsrfAction struct {
@@ -50,84 +46,34 @@ func (NoCheckXsrfAction) Post() string {
 }
 
 func TestNoCheckXsrf(t *testing.T) {
-	go func() {
-		tg := tango.Classic()
-		tg.Use(NewXsrf(time.Minute * 20))
-		tg.Post("/", new(NoCheckXsrfAction))
-		tg.Run("0.0.0.0:9995")
-	}()
+	buff := bytes.NewBufferString("")
+	recorder := httptest.NewRecorder()
+	recorder.Body = buff
 
-	resp, bs, err := post("http://localhost:9995/?id=1&name=lllll")
+	tg := tango.Classic()
+	tg.Use(New(time.Minute * 20))
+	tg.Post("/", new(NoCheckXsrfAction))
+
+	req, err := http.NewRequest("POST", "http://localhost:8000/?id=1&name=lllll", nil)
 	if err != nil {
 		t.Error(err)
-		return
 	}
 
-	fmt.Println(bs)
+	tg.ServeHTTP(recorder, req)
+	expect(t, recorder.Code, http.StatusOK)
+	refute(t, len(buff.String()), 0)
+	expect(t, buff.String(), "this action will not check xsrf")
+}
 
-	if resp.StatusCode != http.StatusOK {
-		t.Error("should say ok.")
-		return
+/* Test Helpers */
+func expect(t *testing.T, a interface{}, b interface{}) {
+	if a != b {
+		t.Errorf("Expected %v (type %v) - Got %v (type %v)", b, reflect.TypeOf(b), a, reflect.TypeOf(a))
 	}
 }
 
-func gzipDecode(src []byte) ([]byte, error) {
-	rd := bytes.NewReader(src)
-	b, err := gzip.NewReader(rd)
-	if err != nil {
-		return nil, err
+func refute(t *testing.T, a interface{}, b interface{}) {
+	if a == b {
+		t.Errorf("Did not expect %v (type %v) - Got %v (type %v)", b, reflect.TypeOf(b), a, reflect.TypeOf(a))
 	}
-
-	defer b.Close()
-
-	data, err := ioutil.ReadAll(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func get(url string) (string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	bs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.Header.Get("Content-Encoding") == "gzip" {
-		data, err := gzipDecode(bs)
-		if err != nil {
-			return "", err
-		}
-		return string(data), nil
-	}
-	return string(bs), nil
-}
-
-func post(url string) (*http.Response, string, error) {
-	resp, err := http.Post(url, "application/x-www-form-urlencoded", nil)
-	if err != nil {
-		return resp, "", err
-	}
-	defer resp.Body.Close()
-
-	bs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return resp, "", err
-	}
-
-	if resp.Header.Get("Content-Encoding") == "gzip" {
-		data, err := gzipDecode(bs)
-		if err != nil {
-			return resp, "", err
-		}
-		return resp, string(data), nil
-	}
-	return resp, string(bs), nil
 }

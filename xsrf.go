@@ -55,7 +55,7 @@ type Xsrf struct {
 	timeout time.Duration
 }
 
-func NewXsrf(timeout time.Duration) *Xsrf {
+func New(timeout time.Duration) *Xsrf {
 	return &Xsrf{
 		timeout: timeout,
 	}
