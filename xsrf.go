@@ -94,7 +94,7 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 		if err != nil {
 			val = uuid.NewRandom().String()
 			cookie = newCookie(XSRF_TAG, val, int64(xsrf.timeout))
-			ctx.SetHeader("Set-Cookie", cookie.String())
+			ctx.Header().Set("Set-Cookie", cookie.String())
 		} else {
 			val = cookie.Value
 		}
