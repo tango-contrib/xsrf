@@ -104,16 +104,14 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 			c.SetXsrfFormHtml(template.HTML(fmt.Sprintf(`<input type="hidden" name="%v" value="%v" />`,
 				XSRF_TAG, val)))
 		}
+
 	} else if ctx.Req().Method == "POST" {
 		res, err := ctx.Req().Cookie(XSRF_TAG)
-		formVals := ctx.Req().Form[XSRF_TAG]
-		var formVal string
-		if len(formVals) > 0 {
-			formVal = formVals[0]
-		}
+		formVal := ctx.Req().FormValue(XSRF_TAG)
+
 		if err != nil || res.Value == "" || res.Value != formVal {
-			ctx.WriteHeader(http.StatusInternalServerError)
-			ctx.Write([]byte("xsrf token error."))
+			ctx.Abort(http.StatusInternalServerError, "xsrf token error.")
+			ctx.Error("xsrf token error.")
 			return
 		}
 	}
