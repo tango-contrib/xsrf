@@ -17,12 +17,18 @@ type XsrfAction struct {
 
 func (x *XsrfAction) Get() {
     x.RenderFile("test.html", render.T{
-        "XsrfFormHtml": xsrf.XsrfFormHtml,
+        "XsrfFormHtml": x.XsrfFormHtml,
     })
 }
 
 func (x *XsrfAction) Post() {
     // before this call, xsrf will be checked
+}
+
+func main() {
+    t := tango.Classic()
+    t.Use(xsrf.New(expireTime))
+    t.Run()
 }
 ```
 
