@@ -15,14 +15,14 @@ type XsrfAction struct {
     xsrf.Checker
 }
 
-func (x *XsrfAction) Get() {
-    x.RenderFile("test.html", render.T{
+func (x *XsrfAction) Get() error {
+    return x.Render("test.html", render.T{
         "XsrfFormHtml": x.XsrfFormHtml(),
     })
 }
 
 func (x *XsrfAction) Post() {
-    // before this call, xsrf will be checked
+    // xsrf will be checked before this being called
 }
 
 func main() {
@@ -36,6 +36,10 @@ If you don't want some action do not check, then
 ```Go
 type NoCheckAction struct {
     xsrf.NoCheck
+}
+
+func (x *NoCheckAction) Post() {
+    // xsrf will NOT be checked before this being called
 }
 ```
 will be ok.
