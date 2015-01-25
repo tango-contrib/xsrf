@@ -17,7 +17,7 @@ type XsrfAction struct {
 
 func (x *XsrfAction) Get() {
     x.RenderFile("test.html", render.T{
-        "XsrfFormHtml": x.XsrfFormHtml,
+        "XsrfFormHtml": x.XsrfFormHtml(),
     })
 }
 
