@@ -31,12 +31,10 @@ func (NoCheck) CheckXsrf() bool {
 
 type XsrfChecker interface {
 	SetXsrfValue(string)
-	SetXsrfFormHtml(template.HTML)
 }
 
 type Checker struct {
 	XsrfValue string
-	XsrfFormHtml template.HTML
 }
 
 func (Checker) CheckXsrf() bool {
@@ -47,8 +45,9 @@ func (c *Checker) SetXsrfValue(v string) {
 	c.XsrfValue = v
 }
 
-func (c *Checker) SetXsrfFormHtml(t template.HTML) {
-	c.XsrfFormHtml = t
+func (c *Checker) XsrfFormHtml() template.HTML {
+	return template.HTML(fmt.Sprintf(`<input type="hidden" name="%v" value="%v" />`,
+		XSRF_TAG, c.XsrfValue))
 }
 
 type Xsrf struct {
@@ -101,8 +100,6 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 
 		if c, ok := action.(XsrfChecker); ok {
 			c.SetXsrfValue(val)
-			c.SetXsrfFormHtml(template.HTML(fmt.Sprintf(`<input type="hidden" name="%v" value="%v" />`,
-				XSRF_TAG, val)))
 		}
 
 	} else if ctx.Req().Method == "POST" {
