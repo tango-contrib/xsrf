@@ -83,22 +83,21 @@ func (xsrf *Xsrf) Handle(ctx *tango.Context) {
 		return
 	}
 
-	if ctx.Req().Method == "GET" {
-		var val string = ""
-		cookie, err := ctx.Req().Cookie(XSRF_TAG)
-		if err != nil {
-			val = uuid.NewRandom().String()
-			cookie = newCookie(XSRF_TAG, val, int64(xsrf.timeout))
-			ctx.Header().Set("Set-Cookie", cookie.String())
-		} else {
-			val = cookie.Value
-		}
+	var val string = ""
+	cookie, err := ctx.Req().Cookie(XSRF_TAG)
+	if err != nil {
+		val = uuid.NewRandom().String()
+		cookie = newCookie(XSRF_TAG, val, int64(xsrf.timeout))
+		ctx.Header().Set("Set-Cookie", cookie.String())
+	} else {
+		val = cookie.Value
+	}
 
-		if c, ok := action.(XsrfChecker); ok {
-			c.SetXsrfValue(val)
-		}
+	if c, ok := action.(XsrfChecker); ok {
+		c.SetXsrfValue(val)
+	}
 
-	} else if ctx.Req().Method == "POST" {
+	if ctx.Req().Method == "POST" {
 		res, err := ctx.Req().Cookie(XSRF_TAG)
 		formVal := ctx.Req().FormValue(XSRF_TAG)
 
