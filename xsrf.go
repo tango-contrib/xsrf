@@ -14,10 +14,6 @@ const (
 	XSRF_TAG string = "_xsrf"
 )
 
-func XsrfName() string {
-	return XSRF_TAG
-}
-
 type Xsrfer interface {
 	CheckXsrf() bool
 }
