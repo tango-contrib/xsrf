@@ -35,12 +35,13 @@ var _ Xsrfer = NoCheck{}
 
 type XsrfChecker interface {
 	SetXsrf(string, *tango.Context, time.Duration)
+	AutoCheck() bool
 }
 
 type Checker struct {
 	XsrfValue string
-	ctx *tango.Context
-	timeout time.Duration
+	ctx       *tango.Context
+	timeout   time.Duration
 }
 
 func (Checker) CheckXsrf() bool {
@@ -53,6 +54,10 @@ func (c *Checker) SetXsrf(v string, ctx *tango.Context, timeout time.Duration) {
 	c.timeout = timeout
 }
 
+func (c *Checker) AutoCheck() bool {
+	return true
+}
+
 func (c *Checker) XsrfFormHtml() template.HTML {
 	return template.HTML(fmt.Sprintf(`<input type="hidden" name="%v" value="%v" />`,
 		XSRF_TAG, c.XsrfValue))
@@ -62,6 +67,19 @@ func (c *Checker) Renew() {
 	var val = uuid.NewRandom().String()
 	var cookie = newCookie(XSRF_TAG, val, int64(c.timeout.Seconds()))
 	c.ctx.Header().Set("Set-Cookie", cookie.String())
+}
+
+func (c *Checker) IsValid() bool {
+	if c.ctx.Req().Method == "POST" {
+		res, err := c.ctx.Req().Cookie(XSRF_TAG)
+		formVal := c.ctx.Req().FormValue(XSRF_TAG)
+
+		if err != nil || res.Value == "" || res.Value != formVal {
+			return false
+		}
+	}
+
+	return true
 }
 
 var _ XsrfChecker = &Checker{}
@@ -92,16 +110,18 @@ func New(timeout time.Duration) tango.HandlerFunc {
 
 		if c, ok := action.(XsrfChecker); ok {
 			c.SetXsrf(val, ctx, timeout)
-		}
 
-		if ctx.Req().Method == "POST" {
-			res, err := ctx.Req().Cookie(XSRF_TAG)
-			formVal := ctx.Req().FormValue(XSRF_TAG)
+			if c.AutoCheck() {
+				if ctx.Req().Method == "POST" {
+					res, err := ctx.Req().Cookie(XSRF_TAG)
+					formVal := ctx.Req().FormValue(XSRF_TAG)
 
-			if err != nil || res.Value == "" || res.Value != formVal {
-				ctx.Abort(http.StatusInternalServerError, "xsrf token error.")
-				ctx.Error("xsrf token error.")
-				return
+					if err != nil || res.Value == "" || res.Value != formVal {
+						ctx.Abort(http.StatusInternalServerError, "xsrf token error.")
+						ctx.Error("xsrf token error.")
+						return
+					}
+				}
 			}
 		}
 
