@@ -66,7 +66,9 @@ func (c *Checker) XsrfFormHtml() template.HTML {
 func (c *Checker) Renew() {
 	var val = uuid.NewRandom().String()
 	var cookie = newCookie(XSRF_TAG, val, int64(c.timeout.Seconds()))
-	c.ctx.Header().Set("Set-Cookie", cookie.String())
+	c.ctx.Cookies().Del(XSRF_TAG)
+	c.ctx.Cookies().Set(cookie)
+	//c.ctx.Header().Set("Set-Cookie", cookie.String())
 }
 
 func (c *Checker) IsValid() bool {
@@ -103,7 +105,9 @@ func New(timeout time.Duration) tango.HandlerFunc {
 		if err != nil {
 			val = uuid.NewRandom().String()
 			cookie = newCookie(XSRF_TAG, val, int64(timeout.Seconds()))
-			ctx.Header().Set("Set-Cookie", cookie.String())
+			ctx.Cookies().Del(XSRF_TAG)
+			ctx.Cookies().Set(cookie)
+			//ctx.Header().Set("Set-Cookie", cookie.String())
 		} else {
 			val = cookie.Value
 		}
