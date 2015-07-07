@@ -144,5 +144,5 @@ func newCookie(name string, value string, age int64) *http.Cookie {
 	} else {
 		utctime = time.Unix(time.Now().Unix()+age, 0)
 	}
-	return &http.Cookie{Name: name, Value: value, Expires: utctime}
+	return &http.Cookie{Name: name, Path: "/", Value: value, Expires: utctime}
 }
