@@ -1,4 +1,4 @@
-xsrf [![Build Status](https://drone.io/github.com/tango-contrib/xsrf/status.png)](https://drone.io/github.com/tango-contrib/xsrf/latest) [![](http://gocover.io/_badge/github.com/tango-contrib/xsrf)](http://gocover.io/github.com/tango-contrib/xsrf)
+xsrf [![CircleCI](https://circleci.com/gh/tango-contrib/xsrf/tree/master.svg?style=svg)](https://circleci.com/gh/tango-contrib/xsrf/tree/master) [![](http://gocover.io/_badge/github.com/tango-contrib/xsrf)](http://gocover.io/github.com/tango-contrib/xsrf)
 ======
 
 Middleware xsrf is a xsrf checker for [Tango](https://github.com/lunny/tango). 
